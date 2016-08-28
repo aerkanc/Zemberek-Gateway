@@ -1,34 +1,47 @@
+import zemberek.morphology.parser.MorphParse;
+import zemberek.morphology.parser.tr.TurkishWordParserGenerator;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringJoiner;
+
+import py4j.GatewayServer;
 public class ZemberekGateway {
 
-    public TurkiyeTurkcesi turkiyeTurkcesi;
-    public Zemberek zemberek;
+    public TurkishWordParserGenerator parser;
 
-    public TurkiyeTurkcesi getTurkiyeTurkcesi(){
-        return turkiyeTurkcesi;
-    }
-
-    public Zemberek getZemberek(){
-        return zemberek;
-    }
-
-    public String deasciify(String text){
-        Deasciifier d = new Deasciifier();
-        d.setAsciiString(text);
-        return d.convertToTurkish();
-    }
-
-    public Kelime[] cozumle(String word){
-        return zemberek.cozumleyici().cozumle(word,CozumlemeSeviyesi.TUM_KOK_VE_EKLER);
+    public HashMap<String, Object> parse(String word){
+        List<MorphParse> parses = parser.parse(word);
+        MorphParse parse = parses.get(0);
+        HashMap<String, Object> response = new HashMap<String,Object> ();
+        response.put("root",parse.dictionaryItem.root.toString());
+        response.put("kind",parse.dictionaryItem.primaryPos.shortForm);
+        HashMap<String,Integer> adds = new HashMap<String,Integer>();
+        for(MorphParse.SuffixData sd : parse.inflectionalGroups.get(0).suffixList){
+            Integer value = adds.get(sd.toString());
+            if(value == null){
+                adds.put(sd.toString(),1);
+            }else{
+                adds.put(sd.toString(),value+1);
+            }
+        }
+        response.put("adds",adds);
+        return response;
     }
 
     public static void main(String[] args) {
         ZemberekGateway zemberekGateway = new ZemberekGateway();
-        zemberekGateway.turkiyeTurkcesi = new TurkiyeTurkcesi();
-        zemberekGateway.zemberek = new Zemberek(zemberekGateway.getTurkiyeTurkcesi());
+        try{
+            zemberekGateway.parser = TurkishWordParserGenerator.createWithDefaults();
+        }catch(IOException ex){
+            System.out.println("Zemberek parser couldn't initialize");
+        }
         GatewayServer gatewayServer = new GatewayServer(zemberekGateway);
         gatewayServer.start();
         System.out.println("Gateway Server Started");
-//        Kelime[] tres = zemberekGateway.zemberek.cozumleyici().cozumle("yiyelim", CozumlemeSeviyesi.TUM_KOK_VE_EKLER);
+//        System.out.println(zemberekGateway.parse("vermiyorum").formatLong());
+//        System.out.println(zemberekGateway.parse("önermiyorum").formatLong());
+//        System.out.println(zemberekGateway.parse("seviyorum").formatLong());
 //        System.out.println(tres);
     }
 }
