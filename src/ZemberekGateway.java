@@ -1,5 +1,8 @@
+import leblebi.spelling.SingleWordSpellChecker;
 import zemberek.morphology.parser.MorphParse;
 import zemberek.morphology.parser.tr.TurkishWordParserGenerator;
+import zemberek.tokenizer.SentenceBoundaryDetector;
+import zemberek.tokenizer.SimpleSentenceBoundaryDetector;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +30,24 @@ public class ZemberekGateway {
         }
         response.put("adds",adds);
         return response;
+    }
+
+    public List<String> splitSentences(String t){
+        SentenceBoundaryDetector detector = new SimpleSentenceBoundaryDetector();
+        List<String> sentences = detector.getSentences(t);
+        return sentences;
+    }
+
+    public void simpleDecodeTest() {
+        SingleWordSpellChecker spellChecker = new SingleWordSpellChecker(1);
+        String vocabulary = "elma";
+        spellChecker.addWord(vocabulary);
+        Assert.assertTrue(spellChecker.decode(vocabulary).contains(vocabulary));
+        check1Distance(spellChecker, "elma");
+
+        spellChecker.addWord("armut");
+        spellChecker.addWord("ayva");
+        check1Distance(spellChecker, "armut");
     }
 
     public static void main(String[] args) {
